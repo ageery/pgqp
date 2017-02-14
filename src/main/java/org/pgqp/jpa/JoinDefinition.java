@@ -1,11 +1,11 @@
 package org.pgqp.jpa;
 
+import static java.util.Spliterators.spliteratorUnknownSize;
+
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -92,37 +92,9 @@ public class JoinDefinition<P, C> {
 	 */
 	public boolean hasOneToManyRelationship() {
 		return StreamSupport
-				.stream(Spliterators.spliteratorUnknownSize(new JoinDefinitionIterator(this), Spliterator.ORDERED),
-						false)
-				.map(JoinDefinition::getAttributeInfo).filter(Objects::nonNull).anyMatch(AttributeInfo::isOneToMany);
-	}
-
-	public static class JoinDefinitionIterator implements Iterator<JoinDefinition<?, ?>>, Iterable<JoinDefinition<?, ?>> {
-
-		private JoinDefinition<?, ?> next;
-
-		public JoinDefinitionIterator(JoinDefinition<?, ?> seed) {
-			this.next = seed;
-		}
-
-		@Override
-		public Iterator<JoinDefinition<?, ?>> iterator() {
-			return this;
-		}
-
-		@Override
-		public boolean hasNext() {
-			return next != null;
-		}
-
-		@Override
-		public JoinDefinition<?, ?> next() {
-			if (next == null) {
-				throw new RuntimeException("Iterator has expired");
-			}
-			JoinDefinition<?, ?> t = next;
-			next = t.getParentJoinDefinition();
-			return t;
-		}
+				.stream(spliteratorUnknownSize(new JoinDefinitionIterator(this), Spliterator.ORDERED),false)
+				.map(JoinDefinition::getAttributeInfo)
+				.filter(Objects::nonNull)
+				.anyMatch(AttributeInfo::isOneToMany);
 	}
 }

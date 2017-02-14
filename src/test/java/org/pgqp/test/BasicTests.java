@@ -5,7 +5,6 @@ import static org.junit.Assert.assertEquals;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -172,6 +171,7 @@ public class BasicTests {
 		assertEquals(4, list.get(1).getId().intValue());
 	}
 	
+	// FIXME: it looks like we're running into a situation where we're doing a join with the children table too...
 	@Test
 	public void testOneToManyCount() {
 		assertEquals(2, entityManager.createQuery(

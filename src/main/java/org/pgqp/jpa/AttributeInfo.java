@@ -4,7 +4,6 @@ import java.util.Objects;
 
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.From;
-import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.metamodel.CollectionAttribute;
 import javax.persistence.metamodel.ListAttribute;
@@ -46,31 +45,21 @@ public class AttributeInfo<P, C> {
 		Objects.requireNonNull(setAttribute);
 		this.setAttribute = setAttribute;
 	}
-
-	/**
-	 * Returns the join performed from the parent to the child.
-	 * 
-	 * @param from
-	 *            parent table
-	 * @param type
-	 *            type of the join to perform
-	 * @return the join between the parent and child tables, with the given join
-	 *         type
-	 */
-	public Join<P, C> join(From<?, P> from, JoinType type) {
-		Join<P, C> join;
+	
+	public JoinInfo<P, C> join(From<?, P> from, JoinTypeInfo joinTypeInfo) {
+		JoinInfo<P, C> joinInfo;
 		if (singluarAttribute != null) {
-			join = from.join(singluarAttribute, type);
+			joinInfo = toSingularAttributeJoin(from, singluarAttribute, joinTypeInfo);
 		} else if (collectionAttribute != null) {
-			join = from.join(collectionAttribute, type);
+			joinInfo = toCollectionAttributeJoin(from, collectionAttribute, joinTypeInfo);
 		} else if (listAttribute != null) {
-			join = from.join(listAttribute, type);
+			joinInfo = toListAttributeJoin(from, listAttribute, joinTypeInfo);
 		} else if (setAttribute != null) {
-			join = from.join(setAttribute, type);
+			joinInfo = toSetAttributeJoin(from, setAttribute, joinTypeInfo);
 		} else {
 			throw new AssertionError("[Internal error] None of the attributes are set");
 		}
-		return join;
+		return joinInfo;
 	}
 	
 	public Expression<?> get(From<?, P> from) {
@@ -97,6 +86,34 @@ public class AttributeInfo<P, C> {
 	 */
 	public boolean isOneToMany() {
 		return singluarAttribute == null;
+	}
+	
+	private static JoinType toJoinType(boolean innerJoin) {
+		return innerJoin ? JoinType.INNER : JoinType.LEFT;
+	} 
+	
+	private static <P,C> JoinInfo<P, C> toSingularAttributeJoin(From<?, P> from, SingularAttribute<P, C> singularAttribute, JoinTypeInfo joinTypeInfo) {
+		return joinTypeInfo.isFetchJoin() 
+				? new JoinInfo<>(from.fetch(singularAttribute, toJoinType(joinTypeInfo.isInnerJoin())))
+				: new JoinInfo<>(from.join(singularAttribute, toJoinType(joinTypeInfo.isInnerJoin())));
+	}
+
+	private static <P,C> JoinInfo<P, C> toCollectionAttributeJoin(From<?, P> from, CollectionAttribute<P,C> collectionAttribute, JoinTypeInfo joinTypeInfo) {
+		return joinTypeInfo.isFetchJoin() 
+				? new JoinInfo<>(from.fetch(collectionAttribute, toJoinType(joinTypeInfo.isInnerJoin())))
+				: new JoinInfo<>(from.join(collectionAttribute, toJoinType(joinTypeInfo.isInnerJoin())));
+	}
+	
+	private static <P,C> JoinInfo<P, C> toListAttributeJoin(From<?, P> from, ListAttribute<P,C> listAttribute, JoinTypeInfo joinTypeInfo) {
+		return joinTypeInfo.isFetchJoin() 
+				? new JoinInfo<>(from.fetch(listAttribute, toJoinType(joinTypeInfo.isInnerJoin())))
+				: new JoinInfo<>(from.join(listAttribute, toJoinType(joinTypeInfo.isInnerJoin())));
+	}
+
+	private static <P,C> JoinInfo<P, C> toSetAttributeJoin(From<?, P> from, SetAttribute<P,C> setAttribute, JoinTypeInfo joinTypeInfo) {
+		return joinTypeInfo.isFetchJoin() 
+				? new JoinInfo<>(from.fetch(setAttribute, toJoinType(joinTypeInfo.isInnerJoin())))
+				: new JoinInfo<>(from.join(setAttribute, toJoinType(joinTypeInfo.isInnerJoin())));
 	}
 
 }
