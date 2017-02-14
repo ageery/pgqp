@@ -1,17 +1,15 @@
 Pretty Good Query Producer (PGQP)
 =================================
 
-Overview
---------
+== Overview
 
-PGQP is a lightweight Java library that generates database queries from POJO field values in a type-safe way using a database framework like JPA.
+PGQP is a lightweight Java library that generates database queries from POJO field values in a type-safe way using a database framework like JPA footnote:[In the same way that Spring Data uses data access implementations (e.g., JPA) to provide higher-level repository functionality, PGQP uses the data access implementation to provide higher-level query functionality].
 
-Using a query definition that specifies how POJO fields are to be converted into restriction clauses and how sort enums map to columns in tables, PGQP not only creates the necessary where and order by clauses, but it also generates any needed joins.
+Using a query definition that specifies how POJO fields are to be converted into restriction clauses and how sort enums map to columns in tables, PGQP not only creates the necessary `where` and `order by` clauses, but it also generates any needed `join` s.
 
-Motivation
-----------
+== Motivation
 
-A common database-related task is to transform non-null values in a POJO into a database query (e.g., a bean that backs a search form).
+A common database-related task is to transform non-empty values in a POJO (e.g., a bean that backs a search form) into a database query.
 
 This can be a tedious process for POJOs with many fields: 
 
@@ -39,31 +37,31 @@ API
 
 The `QueryHandler` interface defines the entry point for the library.  The interface has two methods: one that generates an "entity" (data) query (`toEntityQuery`) and one that generates a count query (`toCountQuery`).  Both methods take a `QueryDefinition` object as a parameter and return a query object in some implementation (e.g., a JPA `CriteriaQuery` object).
 
-The `QueryDefinition` class has two fields: a criteria POJO and an (optional) list of `SortInfo` objects.
+The `QueryDefinition` class has two fields: an arbitrary criteria POJO and an (optional) list of `SortInfo` objects.
 
 The `SortInfo` class has two fields: a sort enum and a sort direction (ascending or descending).
 
-Finally, while PGQP works with regular types (e.g., strings, numbers, dates, etc.), it also provides a generic `CriteriaField` class that encapsulates a value and an operation, as defined in the `StandardOperation` enum.  This enum contains common operations such as equality and inequality, less than and greater than, and string functions such as starts with, contains, etc.  The `CriteriaField` class can be used to make the POJO mapping even more flexible.
+Finally, while PGQP works with regular types (e.g., strings, numbers, dates, etc.), it also provides a generic `CriteriaField` class that encapsulates a value and an operation, as defined in the `StandardOperation` enum.  This enum contains common operations such as equality and inequality, comparison (e.g., less than and greater than), and string functions such as starts with, contains, etc.  The `CriteriaField` class can be used to make the POJO mapping even more flexible.
 
-Implementations
----------------
+== Implementations
 
 PGQP currently targets JPA and makes use of the static metamodel generator classes footnote:[https://docs.jboss.org/hibernate/orm/5.0/topical/html/metamodelgen/MetamodelGenerator.html[https://docs.jboss.org/hibernate/orm/5.0/topical/html/metamodelgen/MetamodelGenerator.html]].
 
-The `JoinDefinition` class is used to specify how to navigate from one entity to another.  It maps a field on a parent table to a child table (e.g., `person.employer`).
+The `JoinDefinition` class is used to specify how to navigate from one entity to another.  It maps a field on a parent table to a child table (e.g., `Person_.employer`).
 
 THe `RestrictionMapping` classes is used to map a bean property to how the value should be used in restricting the query.
 
-The `SortDefinition` class defines how an enum maps to an attribute in an entity class.
+The `SortDefinition` class defines how an enum maps to an attribute in an entity class (e.g., `Person_.birthdate`).
 
-The fundamental  JPA-related class in the PGQP is `RestrictionDefinition`.  This class specifies how a restriction clause is to be applied to a query.  This is done using a `BiFunction` that takes a `QueryContext` object (`CriteriaBuilder`, `CriteriaQuery` and `Path`) plus the value of the attribute in the bean and returns a `javax.CONTAINS_FIELD_HANDLER..criteria.Predicate`.  The PGQP library takes care of properly adding the restriction to the `CriteriaQuery` (e.g., CONTAINS_FIELD_HANDLER).
+The fundamental  JPA-related class in the PGQP is `RestrictionDefinition`.  This class specifies how a restriction clause is to be applied to a query.  This is done using a `BiFunction` that takes a `QueryContext` object (`CriteriaBuilder`, `CriteriaQuery` and `Path`) plus the value of the attribute in the bean and returns a `javax.persistence.criteria.Predicate`.  The PGQP library takes care of properly adding the restrictions generate from `RestrictionDefinition` objects to the `CriteriaQuery`.
 
-While there is a lot of expressive power in specifying the restriction mapping in this way, the most common `BiFunction` implementations can be found in the `JpaCriteriaHandlers` class.
+While there is a lot of expressive power in specifying the restriction mapping in this way, the most common `BiFunction` implementations can be found in the `JpaCriteriaHandlers` class  (e.g., `CONTAINS_FIELD_HANDLER` which generates a like clause with leading and trailing wildcards).
 
-Examples
---------
+== Examples
 
-In this example, there are two entity classes: Person and Business.  Project Lombok is used to generate getters and setters.
+=== Entity Mappings
+
+In the examples below, there are two entity classes: Person and Business.  Project Lombok is used to generate getters and setters.
 
 .Person.java
 [source, java]
@@ -98,9 +96,11 @@ public class Business {
 	private Set<Person> employees;
 }
 
-To work with Person-related queries, we first need to map the various joins that may be needed when creating a query.  Ordinarily, we'd encapsulate these definitions in a class so we can use them in other parts of the mapping.
+== Join Mappings
 
-A `JoinDefinition` instance is parameterized with the type of table it is joining from and the type of table that it is. We use the JPA Metamodel generated classes to define these definitions in a type-safe way.
+To work with Person-related queries (i.e., queries that return `Person` objects), we first need to map the various joins that may be needed when creating a query.  Ordinarily, we'd encapsulate these definitions in a class so we can use them in other parts of the mapping.
+
+A `JoinDefinition` instance is parameterized with the type of table it is joining from and the type of table it is. We use the JPA Metamodel generated classes to define these definitions in a type-safe way.
 
 The root table has no parent; it is always present in the query.
 
@@ -130,6 +130,8 @@ Finally, to work with restrictions related to a Person's children, we define a j
 JoinDefinition<Person, Person> CHILD_TABLE = new JoinDefinition<>("child", 
     Person.class, PERSON_TABLE, new AttributeInfo<>(Person_.children));
 
+=== Sort Mappings
+
 Having defined the various types of tables in the system, we can now define sorts and how they map to  entity fields.  
 
 First we define the sort enum that defines the fields that can be sorted on.
@@ -149,7 +151,9 @@ new SortDefinition<>(PersonSort.LAST_NAME, PERSON_TABLE, Person_.lastName)
 new SortDefinition<>(PersonSort.BUSINESS_NAME, BUSINESS_TABLE, Person_.name)
 new SortDefinition<>(PersonSort.OWNER_LAST_NAME, BUSINESS_OWNER_TABLE, Person_.lastName)
 
-The search criteria is driven by a bean. PGQP works with regular types -- `String` and `Boolean` below; it can also work with special types that specify both a value and an operation -- `CriteriaField<String> lastName` is an example of this.
+=== Search Criteria Mapping
+
+The search criteria is driven by a bean. PGQP works with regular types -- `String` and `Boolean` below; it can also work with special types that specify both a value and an operation -- `CriteriaField<String> lastName` below is an example of this.
 
 .PersonCriteria.java
 [source, java]
@@ -193,10 +197,8 @@ Here is a more complicated example:
 new RestrictionMapping<>(PersonCriteria::getUnderageChildren,
     new RestrictionDefinition<>(CHILD_TABLE, Person_.birthdate, 
     (context, value) -> value ?
-        context.getCriteriaBuilder()
-            .greaterThan(context.getPath(), LocalDate.now().minusYears(18))
-		: context.getCriteriaBuilder().
-		    lessThan(context.getPath(), LocalDate.now().minusYears(18)))
+        context.getCriteriaBuilder().greaterThan(context.getPath(), LocalDate.now().minusYears(18))
+		: context.getCriteriaBuilder().lessThan(context.getPath(), LocalDate.now().minusYears(18)))
 			
 Finally, here's an example of creating a sub-query for whether a Person has children:
 
@@ -206,12 +208,13 @@ new RestrictionMapping<>(PersonCriteria::getHasChildren,
     new RestrictionDefinition<>(PERSON_TABLE, Person_.id, (context, value) -> {
 	    Subquery<Integer> sq = context.getQuery().subquery(Integer.class);
 	    Root<Person> root = sq.from(Person.class);
-		sq.select(root.get(Person_.parent).get(Person_.id))
-		    .where(root.get(Person_.parent).isNotNull());
+	    sq.select(root.get(Person_.parent).get(Person_.id)).where(root.get(Person_.parent).isNotNull());
 		In<Integer> in = context.getCriteriaBuilder().in(context.getPath()).value(sq);
 		return value ? in : in.not();
     }
 ))
+
+=== QueryHandler Construction
 
 To create a query handler, we create a list of the restriction handlers and the sort mappings.  In addition, for the purpose of creating sub-queries, we need to specify the type of the primary key field (`Integer.class`) and how to access the primary key from the root table (`r -> r.get(Person_.id)`).
 
@@ -219,7 +222,11 @@ With these pieces, we can create our query handler.
 
 .JpaQueryHandler creation
 [source, java]
-QueryHandler<CriteriaQuery<Person>, CriteriaQuery<Long>, Person, PersonCriteria, PersonSort> queryHandler = new JpaQueryHandler<>(entityManager, Person.class, Integer.class, r -> r.get(Person_.id), getRestrictions(), getSorts());
+QueryHandler<CriteriaQuery<Person>, CriteriaQuery<Long>, Person, PersonCriteria, PersonSort> queryHandler = 
+new JpaQueryHandler<>(entityManager, Person.class, Integer.class, r -> r.get(Person_.id), 
+    getRestrictions(), getSorts());
+
+=== QueryHandler Examples
 
 Using the query handler, we can execute queries against the database via the JPA EntityManager.
 
@@ -227,20 +234,22 @@ Here are some examples.
 
 .Query to find people with the first name of Sally, ordered by last name 
 [source, java]
-QueryDefinition<PersonCriteria, PersonSort> qd = new QueryDefinition<>(
-    new PersonCriteria().setFirstName("Sally"), Stream.of(PersonSort.LAST_NAME));
+PersonCriteria criteria = new PersonCriteria().setFirstName("Sally");
+QueryDefinition<PersonCriteria, PersonSort> qd = new QueryDefinition<>(criteria, PersonSort.LAST_NAME);
 CriteriaQuery<Person> cq = queryHandler.toEntityQuery(qd);
 TypeQuery<Person> tq = entityManager.createQuery(cq);
 List<Person> people = tq.getResultList();
 
 Note that the `toEntityQuery` returns a `CriteriaQuery` object which can be further manipulated, if needed (e.g., to set a limit and/or offset for the query).  Note also that, using the exact same `QueryDefinition` object, we could instead do a count query by change the `queryHandler.toEntityQuery` to `queryHandler.toCountQuery`.
 
-.Query to find people with the last name of Smith, ordered by first name descending
+.Query to find people with the last name of Smith, ordered by first name descending, last name ascending
 [source, java]
 entityManager.createQuery(
 	queryHandler.toEntityQuery(new QueryDefinition<>(
 		new PersonCriteria().setLastName(new CriteriaField<String>(StandardOperation.EQ, "Smith")),
-		Arrays.asList(new SortInfo<>(PersonSort.FIRST_NAME, Direction.DESC)))))
+		Arrays.asList(
+		    new SortInfo<>(PersonSort.FIRST_NAME, Direction.DESC), 
+		    new SortInfo<>(PersonSort.LAST_NAME, Direction.ASC)))))
 	.getResultList();
 
 .Query to find the number of unemployed people with no children
@@ -250,6 +259,12 @@ entityManager.createQuery(
 		new PersonCriteria()
 			.setHasChildren(false)
 			.setEmployed(false))))
-	.getSingleResult()	
+	.getSingleResult();	
 		
-As you can see, the high level use of the `QueryHandler` is very straightforward: simply specifiy the applicable fields on the criteria bean and (optionally) specify sorts.  The details involved in constructing the query are contained in the mappings that were used to create the `QueryHandler`.
+As you can see, PGQP provides a higher-level abstraction over querying: simply specify the applicable fields on the criteria bean and (optionally) specify a list of sort enums.  The details involved in constructing the query are contained in the mappings that were used to create the `QueryHandler` but the caller does not need to be aware of them.
+
+For more examples, see the tests in the `src/test` directory.
+
+== Conclusion
+
+PGQP provides a hugh-level abstraction over querying.  It provides a framework for specifying individual restrictions and sorts in isolation and takes care of combining these into a single query.  In so doing, it simplifies query construction by allowing developers to work with an arbitrary criteria POJO and not have to work with the underlying data store itself (e.g., JPA).

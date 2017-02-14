@@ -100,8 +100,6 @@ public class BasicTests {
 		entityManager.getTransaction().commit();
 	}
 	
-	// FIXME: add desc sort test
-	
 	@Test
 	public void testSortUsesOuterJoin() {
 		/*
@@ -110,7 +108,7 @@ public class BasicTests {
 		assertEquals(8, entityManager.createQuery(
 				queryHandler.toEntityQuery(new QueryDefinition<>(
 						new PersonCriteria(), 
-						Stream.of(PersonSort.BUSINESS_NAME))))
+						PersonSort.BUSINESS_NAME)))
 				.getResultList()
 				.size());
 	}
@@ -168,7 +166,7 @@ public class BasicTests {
 		List<Person> list = entityManager.createQuery(
 				queryHandler.toEntityQuery(new QueryDefinition<>(
 						new PersonCriteria().setEmployed(true), 
-						Stream.of(PersonSort.BUSINESS_NAME, PersonSort.FIRST_NAME, PersonSort.LAST_NAME))))
+						PersonSort.BUSINESS_NAME, PersonSort.FIRST_NAME, PersonSort.LAST_NAME)))
 				.getResultList();
 		assertEquals(1, list.get(0).getId().intValue());
 		assertEquals(4, list.get(1).getId().intValue());
@@ -247,7 +245,7 @@ public class BasicTests {
 		entityManager.createQuery(
 				queryHandler.toEntityQuery(new QueryDefinition<>(
 						new PersonCriteria(), 
-						Stream.of(PersonSort.NO_MAPPING))))
+						PersonSort.NO_MAPPING)))
 				.getResultList();
 	}
 	

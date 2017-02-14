@@ -18,12 +18,13 @@ public class QueryDefinition<C, S> {
 	private List<SortInfo<S>> sorts;
 
 	public QueryDefinition(C criteria) {
-		this(criteria, (Stream<S>) null);
+		this(criteria, (List<SortInfo<S>>) null);
 	}
 
-	public QueryDefinition(C criteria, Stream<S> sorts) {
+	@SafeVarargs
+	public QueryDefinition(C criteria, S... sorts) {
 		this.criteria = criteria;
-		this.sorts = sorts == null ? null : sorts.map(SortInfo<S>::new)
+		this.sorts = sorts == null ? null : Stream.of(sorts).map(SortInfo<S>::new)
 				.collect(Collectors.toList());
 	}
 	
