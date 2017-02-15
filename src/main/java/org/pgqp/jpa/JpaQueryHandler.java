@@ -2,7 +2,6 @@ package org.pgqp.jpa;
 
 import static org.jooq.lambda.tuple.Tuple.tuple;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +30,8 @@ import org.pgqp.SortInfo;
 
 public class JpaQueryHandler<T, ID, C, S> implements QueryHandler<CriteriaQuery<T>, CriteriaQuery<Long>, T, C, S> {
 	
-	private static final Consumer<QueryContext<Long, ?>> COUNT_CUSTOMIZER = (context) -> context.getQuery().select(context.getCriteriaBuilder().count(context.getPath()));  
+	private static final Consumer<QueryContext<Long, ?>> COUNT_CUSTOMIZER = 
+			(context) -> context.getQuery().select(context.getCriteriaBuilder().count(context.getPath()));  
 	
 	private Class<ID> idClass;
 	private Class<T> entityClass;
@@ -41,9 +41,10 @@ public class JpaQueryHandler<T, ID, C, S> implements QueryHandler<CriteriaQuery<
 	private EntityManager entityManager;
 	private JoinDefinition<?, T> rootJoinDefinition;
 
-	public JpaQueryHandler(EntityManager entityManager, Class<T> entityClass, Class<ID> idClass, JoinDefinition<?, T> rootJoinDefinition,
-			Function<Root<T>, Expression<ID>> idExpression, Collection<RestrictionMapping<C, ?, ?, ?, ?>> restrictions,
-			Collection<SortDefinition<S, ?, ?>> sorts) {
+	public JpaQueryHandler(EntityManager entityManager, Class<T> entityClass, Class<ID> idClass, 
+			JoinDefinition<?, T> rootJoinDefinition, Function<Root<T>, Expression<ID>> idExpression, 
+			Collection<RestrictionMapping<C, ?, ?, ?, ?>> restrictions, Collection<SortDefinition<S, ?, ?>> sorts) 
+	{
 		this.entityManager = entityManager;
 		this.idClass = idClass;
 		this.rootJoinDefinition = rootJoinDefinition;
