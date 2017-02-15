@@ -5,7 +5,7 @@ Pretty Good Query Producer (PGQP)
 
 PGQP is a lightweight Java library that generates database queries from POJO field values in a type-safe way using a database framework like JPA footnote:[In the same way that Spring Data uses data access implementations (e.g., JPA) to provide higher-level repository functionality, PGQP uses the data access implementation to provide higher-level query functionality].
 
-Using a query definition that specifies how POJO fields are to be converted into restriction clauses and how sort enums map to columns in tables, PGQP not only creates the necessary `where` and `order by` clauses, but it also generates any needed `join` s.
+Using a query definition that specifies how POJO fields are to be converted into restriction clauses and how sort enums map to columns in tables, PGQP not only creates the necessary `where` and `order by` clauses, but it also generates any needed `join` clauses (in addition to the `select` and `from` clauses).
 
 == Motivation
 
@@ -20,17 +20,17 @@ This can be a tedious process for POJOs with many fields:
 
 The first beneft offered by PGQP is that, using Java-8 method handles, it allows the mapping between field values and where-clauses to be specified independently of the application of the mappings.  That is, the library user specifies the mappings and the library takes care of generating the restrictions in the query.
 
-A second tedious part of translating bean fields to where clauses occurs when multiple tables are involved.  In order to add restrictions related to a table not part of the root table (the from clause), it is necessary to create a join to the table the restriction column is in.  However, in most cases, tables should only be joined once, making it necessary to keep track of which tables have already been joined in the query.
+A second tedious part of translating bean fields to where clauses occurs when multiple tables are involved.  In order to add restrictions related to a table not part of the root table (the `from` clause), it is necessary to create a join to the table the restriction column is in.  However, in most cases, tables should only be joined once, making it necessary to keep track of which tables have already been joined in the `where` clause of the query.
 
-The second benefit offered by PGQP is that it allows the restriction mapping to specify the table it is related to and how the table should be joined into the query.  That is, the library user specifies the table information for the restrictions and PGQP takes care of generating the needed joins.
+The second benefit offered by PGQP is that it allows the restriction mapping to specify the table of the field it is related to and how the table should be joined into the query.  That is, the library user specifies the table information for the restrictions and PGQP takes care of generating the needed joins.
 
-Further complicating things, some restrictions, if naively mapped to regular joins, may produce duplicate rows in the result set because the criteria is one-to-many with the root table. One solution to this problem is to use a distinct clause in the projection.  An issue with this solution is that it often suffers from performance problems and may lead to issues with other parts of the query (e.g., BLOB columns) footnote:[https://blog.jooq.org/2016/03/09/sql-join-or-exists-chances-are-youre-doing-it-wrong/].
+Further complicating things, some restrictions, if naively mapped to regular joins, may produce duplicate rows in the result set because the criteria is one-to-many with the root table. One solution to this problem is to use a `distinct` attribute in the projection.  An issue with this solution is that it often suffers from performance problems and may lead to issues with other parts of the query (e.g., BLOB columns) footnote:[https://blog.jooq.org/2016/03/09/sql-join-or-exists-chances-are-youre-doing-it-wrong/].
 
 The third benefit offered by PGQP is that it detects one-to-many restrictions and translates these restrictions into a semi-join (in-clause + sub-query restriction).
 
-Finally, in order to add order by clauses that potentially span multiple tables, it is necessary to insure that the tables containing the column to be sorted on is part of the query using the proper type of join.
+Finally, in order to add `order by` clauses that potentially span multiple tables, it is necessary to insure that the tables containing the columns to be sorted on are part of the query ()using the proper type of join) and that the sort columns are in the projection.
 
-The fourth benefit of PGQP is that it insures that tables needed for the order by clauses are properly joined into the query.
+The fourth benefit of PGQP is that it insures that tables needed for the `order by` clauses are properly joined into the query and that the sort columns are in the `select` clause.
 
 API
 ---
@@ -53,7 +53,7 @@ THe `RestrictionMapping` classes is used to map a bean property to how the value
 
 The `SortDefinition` class defines how an enum maps to an attribute in an entity class (e.g., `Person_.birthdate`).
 
-The fundamental  JPA-related class in the PGQP is `RestrictionDefinition`.  This class specifies how a restriction clause is to be applied to a query.  This is done using a `BiFunction` that takes a `QueryContext` object (`CriteriaBuilder`, `CriteriaQuery` and `Path`) plus the value of the attribute in the bean and returns a `javax.persistence.criteria.Predicate`.  The PGQP library takes care of properly adding the restrictions generate from `RestrictionDefinition` objects to the `CriteriaQuery`.
+The fundamental  JPA-related class in the PGQP is `RestrictionDefinition`.  This class specifies how a restriction clause is to be applied to a query.  This is done using a `BiFunction` that takes a `QueryContext` object (`CriteriaBuilder`, `CriteriaQuery` and `Path`) plus the value of the attribute in the bean and returns a `javax.persistence.criteria.Predicate`.  The PGQP library takes care of properly adding the restrictions generated from `RestrictionDefinition` objects to the `CriteriaQuery`.
 
 While there is a lot of expressive power in specifying the restriction mapping in this way, the most common `BiFunction` implementations can be found in the `JpaCriteriaHandlers` class  (e.g., `CONTAINS_FIELD_HANDLER` which generates a like clause with leading and trailing wildcards).
 
@@ -96,7 +96,7 @@ public class Business {
 	private Set<Person> employees;
 }
 
-== Join Mappings
+=== Join Mappings
 
 To work with Person-related queries (i.e., queries that return `Person` objects), we first need to map the various joins that may be needed when creating a query.  Ordinarily, we'd encapsulate these definitions in a class so we can use them in other parts of the mapping.
 
@@ -179,12 +179,12 @@ The `RestrictionDefinition` constructor takes a table join, a table field and a 
 new RestrictionMapping<>(PersonCriteria::getFirstName, 
     new RestrictionDefinition<>(PERSON_TABLE, Person_.firstName, CONTAINS_FIELD_HANDLER))
 
-.Business name mapping to a like restriction
+.Business name mapping to a `like` restriction
 [source, java]
 new RestrictionMapping<>(PersonCriteria::getCompanyName, 
     new RestrictionDefinition<>(BUSINESS_TABLE, Business_.name, LIKE_FIELD_HANDLER))
 
-.Person employed mapping to a not null restriction
+.Person employed mapping to a `not null` restriction
 [source, java]
 new RestrictionMapping<>(PersonCriteria::getEmployed, 
     new RestrictionDefinition<>(PERSON_TABLE, Person_.employer,
@@ -216,19 +216,19 @@ new RestrictionMapping<>(PersonCriteria::getHasChildren,
 
 === QueryHandler Construction
 
-To create a query handler, we create a list of the restriction handlers and the sort mappings.  In addition, for the purpose of creating sub-queries, we need to specify the type of the primary key field (`Integer.class`) and how to access the primary key from the root table (`r -> r.get(Person_.id)`).
+To create a query handler, we create a list of the restriction handlers and the sort mappings.  In addition, for the purpose of creating sub-queries, we need to specify the root `JoinDefinition` (`PERSON_TABLE`), the type of the primary key field (`Integer.class`) and how to access the primary key from the root table (`r -> r.get(Person_.id)`).
 
 With these pieces, we can create our query handler.
 
 .JpaQueryHandler creation
 [source, java]
 QueryHandler<CriteriaQuery<Person>, CriteriaQuery<Long>, Person, PersonCriteria, PersonSort> queryHandler = 
-new JpaQueryHandler<>(entityManager, Person.class, Integer.class, r -> r.get(Person_.id), 
+new JpaQueryHandler<>(entityManager, Person.class, PERSON_TABLE, Integer.class, r -> r.get(Person_.id), 
     getRestrictions(), getSorts());
 
 === QueryHandler Examples
 
-Using the query handler, we can execute queries against the database via the JPA EntityManager.
+With a `JpaQueryHandler` instance, we can execute queries against the database via the JPA EntityManager.
 
 Here are some examples.  
 
@@ -267,4 +267,4 @@ For more examples, see the tests in the `src/test` directory.
 
 == Conclusion
 
-PGQP provides a hugh-level abstraction over querying.  It provides a framework for specifying individual restrictions and sorts in isolation and takes care of combining these into a single query.  In so doing, it simplifies query construction by allowing developers to work with an arbitrary criteria POJO and not have to work with the underlying data store itself (e.g., JPA).
+PGQP is a high-level abstraction for querying.  It provides a framework for specifying individual restrictions and sorts in isolation and takes care of combining these into a single query.  In so doing, it simplifies query construction by allowing developers to work with an arbitrary criteria POJO and not have to work with the underlying data store itself (e.g., JPA).

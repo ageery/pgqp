@@ -1,7 +1,7 @@
 package org.pgqp;
 
 /**
- * Combines an operation with a value.
+ * Convenience class for combining an operation with a value.
  *
  * @param <V>
  *            type of the operation
