@@ -1,16 +1,16 @@
-package org.pgqp.test.query;
+package org.pgqp.jpa.query;
 
 import static java.util.Arrays.asList;
 import static org.pgqp.jpa.JpaCriteriaHandlers.CONTAINS_FIELD_HANDLER;
 import static org.pgqp.jpa.JpaCriteriaHandlers.LIKE_FIELD_HANDLER;
 import static org.pgqp.jpa.JpaCriteriaHandlers.STRING_FIELD_HANDLER;
 import static org.pgqp.jpa.JpaCriteriaHandlers.notNullFieldHandler;
-import static org.pgqp.test.entity.Business_.address;
-import static org.pgqp.test.entity.Business_.name;
-import static org.pgqp.test.entity.Person_.birthdate;
-import static org.pgqp.test.entity.Person_.employer;
-import static org.pgqp.test.entity.Person_.firstName;
-import static org.pgqp.test.entity.Person_.lastName;
+import static org.pgqp.jpa.entity.Business_.address;
+import static org.pgqp.jpa.entity.Business_.name;
+import static org.pgqp.jpa.entity.Person_.birthdate;
+import static org.pgqp.jpa.entity.Person_.employer;
+import static org.pgqp.jpa.entity.Person_.firstName;
+import static org.pgqp.jpa.entity.Person_.lastName;
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -29,10 +29,10 @@ import org.pgqp.jpa.JpaQueryHandler;
 import org.pgqp.jpa.RestrictionDefinition;
 import org.pgqp.jpa.RestrictionMapping;
 import org.pgqp.jpa.SortDefinition;
-import org.pgqp.test.entity.Business;
-import org.pgqp.test.entity.Business_;
-import org.pgqp.test.entity.Person;
-import org.pgqp.test.entity.Person_;
+import org.pgqp.jpa.entity.Business;
+import org.pgqp.jpa.entity.Person;
+import org.pgqp.jpa.entity.Business_;
+import org.pgqp.jpa.entity.Person_;
 
 public class PersonQueryHandlerConfig {
 
@@ -89,7 +89,7 @@ public class PersonQueryHandlerConfig {
 	}
 	
 	public QueryHandler<CriteriaQuery<Person>, CriteriaQuery<Long>, Person, PersonCriteria, PersonSort> getPersonQueryHandler(EntityManager entityManager) {
-		return new JpaQueryHandler<>(entityManager, Person.class, Integer.class, r -> r.get(Person_.id),
+		return new JpaQueryHandler<>(entityManager, Person.class, Integer.class, PERSON_TABLE, r -> r.get(Person_.id),
 				getRestrictions(), getSorts());
 	}
 	

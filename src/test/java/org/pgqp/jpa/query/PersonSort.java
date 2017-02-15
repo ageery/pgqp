@@ -1,4 +1,4 @@
-package org.pgqp.test.query;
+package org.pgqp.jpa.query;
 
 public enum PersonSort {
 	ID, 

@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import javax.persistence.criteria.From;
+
 /**
  * Defines how to join a parent to a child table.
  * 
@@ -92,9 +94,14 @@ public class JoinDefinition<P, C> {
 	 */
 	public boolean hasOneToManyRelationship() {
 		return StreamSupport
-				.stream(spliteratorUnknownSize(new JoinDefinitionIterator(this), Spliterator.ORDERED),false)
+				.stream(spliteratorUnknownSize(new JoinDefinitionIterator(this), Spliterator.ORDERED), false)
 				.map(JoinDefinition::getAttributeInfo)
 				.filter(Objects::nonNull)
 				.anyMatch(AttributeInfo::isOneToMany);
 	}
+	
+	public JoinInfo<P, C> join(From<?, P> from, JoinTypeInfo joinTypeInfo) {
+		return attributeInfo.join(from, joinTypeInfo);
+	}
+	
 }

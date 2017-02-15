@@ -1,4 +1,4 @@
-package org.pgqp.test.entity;
+package org.pgqp.jpa.entity;
 
 import java.time.LocalDate;
 import java.util.Collection;

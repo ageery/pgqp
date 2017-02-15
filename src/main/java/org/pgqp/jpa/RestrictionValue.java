@@ -2,6 +2,11 @@ package org.pgqp.jpa;
 
 import java.util.Optional;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
+
 /**
  * Maps a restriction definition to an optional value related to the definition
  * 
@@ -37,4 +42,9 @@ class RestrictionValue<P, C, F, V> {
 	public boolean hasValue() {
 		return value.isPresent();
 	}
+	
+	public Predicate toPredicate(CriteriaBuilder criteriaBuilder, CriteriaQuery<?> query, Path<F> attribute) {
+		return restrictionDefinition.toPredicate(new QueryContext<>(criteriaBuilder, query, attribute), value.get());
+	}
+	
 }

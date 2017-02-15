@@ -35,12 +35,13 @@ public class JoinInfo<P, C> {
 		return from != null ? from : (From<P,C>) fetch;
 	}
 	
-	public Path<?> get(SingularAttribute<C, ?> singularAttribute) {
+	public <X> Path<X> get(SingularAttribute<C, X> singularAttribute) {
 		return toFrom().get(singularAttribute);
 	}
 	
-	public Path<?> toPath() {
-		return from != null ? from : (Path<?>) fetch;
+	@SuppressWarnings("unchecked")
+	public Path<C> toPath() {
+		return from != null ? from : (Path<C>) fetch;
 	}
 	
 }

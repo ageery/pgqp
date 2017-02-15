@@ -1,4 +1,4 @@
-package org.pgqp.test.query;
+package org.pgqp.jpa.query;
 
 import org.pgqp.CriteriaField;
 

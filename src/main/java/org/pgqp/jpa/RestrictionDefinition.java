@@ -42,7 +42,6 @@ public class RestrictionDefinition<P, C, F, V> {
 		return toPredicate;
 	}
 
-	// FIXME: this doesn't seem to be the correct location for this.
 	/**
 	 * Converts a restriction definition to a JPA predicate.
 	 * 
